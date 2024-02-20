@@ -15,8 +15,8 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
+import static org.springframework.http.RequestEntity.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -37,14 +37,27 @@ private ObjectMapper objm;
     void studentControllerLoad(){
 assertThat(studentController).isNotNull();
     }
-    private MvcResult addStudent() throws Exception{
+    private Student addStudent() throws Exception{
         Student student = new Student();
         student.setWorking(true);
         student.setName("simone");
         student.setSurname("cordisco");
         return addStudent(student);
     }
-    private MvcResult addStudent(Student student) throws Exception{
+    private Student addStudent(Student student) throws Exception{
+        MvcResult result = addStudentRequest();
+        Student studentTest = objm.readValue(result.getResponse().getContentAsString(), Student.class); /*leggi i lavore indicato e converti in student*/
+        return student;
+
+    }
+    private MvcResult addStudentRequest() throws Exception{
+        Student student = new Student();
+        student.setWorking(true);
+        student.setName("simone");
+        student.setSurname("cordisco");
+        return addStudentRequest(student);
+    }
+    private MvcResult addStudentRequest(Student student) throws Exception{
       if(student == null) return null;
         String studentJson = objm.writeValueAsString(student);
 
@@ -57,26 +70,37 @@ assertThat(studentController).isNotNull();
     }
     @Test
     void addStudentTest() throws Exception {
-         MvcResult result = addStudent();
-         Student studentTest = objm.readValue(result.getResponse().getContentAsString(), Student.class); /*leggi i lavore indicato e converti in student*/
-                 assertThat(studentTest.getId()).isNotNull();
-
+        MvcResult result = addStudentRequest();
+            Student StudentResult = objm.readValue(result.getResponse().getContentAsString(), Student.class);
+            assertThat(StudentResult.getId()).isNotNull();
     }
     @Test
     void getAllStudent() throws Exception {
-         addStudent();
-
-
+        addStudentRequest();
         MvcResult result =  this .mvc.perform(get("/getAllStudent"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andReturn();
-
         List<Student> studentListTest = objm.readValue(result.getResponse().getContentAsString(), List.class); /*leggi i lavore indicato e converti in student*/
         System.out.println("Student in db are: " + studentListTest.size());
         assertThat(studentListTest.size()).isNotZero();
 
     }
+/*
+    @Test
+    void updateStudent () throws Exception{
+        Student student = addStudentRequest();
+        assertThat(student.getId()).isNotNull();
+        student.setName("giulio");
+        String studentJson = objm.writeValueAsString(student);
 
+        return this .mvc.perform(put("/addStudent/"+ student.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(studentJson))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn();
+    }
 
+*/
 }
